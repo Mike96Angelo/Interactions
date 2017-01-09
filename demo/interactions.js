@@ -58,20 +58,21 @@
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	__webpack_require__(7);
-
 	var Generator = __webpack_require__(3),
-	    baseEventListener = __webpack_require__(6);
+	    baseEventListener = __webpack_require__(4);
 
-	var Interactions = Generator.generate(function Interactions(binder, interactions, $element) {
+	var Interactions = Generator.generate(function Interactions(options) {
 	    var _ = this;
 
 	    _.defineProperties({
-	        binder: binder,
-	        $element: $element
+	        writable: true
+	    }, {
+	        thisArg: options.thisArg,
+	        emitter: options.emitter,
+	        $: options.$ || (window.$ && window.$.noConflict()) || (window.jQuery.noConflict())
 	    });
 
-	    _.parseInteractions(interactions);
+	    _.parseInteractions(options.interactions);
 	});
 
 	Interactions.actions = {};
@@ -93,8 +94,9 @@
 
 	        for (key in interactions) {
 	            i = interactions[key];
+	            i.$ = i.$ || _.$;
 	            action = Interactions.actions[i.event] || baseEventListener(i.event);
-	            action.call(_.binder, _.$element, i);
+	            action.call(_.thisArg, _.emitter, i);
 	        }
 	    },
 	});
@@ -471,48 +473,40 @@
 
 
 /***/ },
-/* 4 */,
-/* 5 */,
-/* 6 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var nanoQuery = __webpack_require__(8),
-	    jQuery = window.$ || window.jQuery || {},
-	    $;
-
-	if (typeof jQuery === 'function' && 'noConflict' in jQuery) {
-	    $ = jQuery.noConflict();
-	}
+	var nanoQuery = __webpack_require__(5);
 
 	function __eventAction(_, interaction) {
 	    return function action(event) {
-	        return interaction.action.call(_, event, $(this));
+	        return interaction.action.call(_, event, interaction.$(this));
 	    };
 	}
 
 	module.exports = function baseEventListener(action) {
-	    return function baseInteraction($el, interaction) {
+	    return function baseInteraction(emitter, interaction) {
 	        var _ = this;
 
-	        if ($) {
+	        if (typeof interaction.$ !== 'undefined') {
 	            if (interaction.target) {
-	                $($el).on(action, interaction.target, __eventAction(_, interaction));
+	                interaction.$(emitter).on(action, interaction.target, __eventAction(_, interaction));
 	            } else {
-	                $($el).on(action, __eventAction(_, interaction));
+	                interaction.$(emitter).on(action, __eventAction(_, interaction));
 	            }
 	        } else {
-	            $el = interaction.$element || $el;
+	            emitter = interaction.emitterement || emitter;
 
-	            if (typeof $el.querySelectorAll === 'undefined' || typeof interaction.target === 'undefined') {
-	                $el.addEventListener(action, function(event) {
-	                    if (interaction.action.call(_, event, $el) === false) {
+	            if (typeof emitter.querySelectorAll === 'undefined' || typeof interaction.target === 'undefined') {
+	                emitter.addEventListener(action, function(event) {
+	                    if (interaction.action.call(_, event, emitter) === false) {
 	                        event.preventDefault(); // mimic jQuery's `return false`
 	                        event.stopPropagation();
 	                    };
 	                });
 	            } else {
-	                nanoQuery($el, interaction.target, action, function eventListener(event) {
-	                    if (interaction.action.call(_, event, $el) === false) {
+	                nanoQuery(emitter, interaction.target, action, function eventListener(event) {
+	                    if (interaction.action.call(_, event, emitter) === false) {
 	                        event.preventDefault(); // mimic jQuery's `return false`
 	                        event.stopPropagation();
 	                    };
@@ -525,38 +519,39 @@
 
 
 /***/ },
-/* 7 */
-/***/ function(module, exports) {
-
-	if (!Element.prototype.matches) {
-	    Element.prototype.matches =
-	        Element.prototype.matchesSelector ||
-	        Element.prototype.mozMatchesSelector ||
-	        Element.prototype.msMatchesSelector ||
-	        Element.prototype.oMatchesSelector ||
-	        Element.prototype.webkitMatchesSelector ||
-	        function(s) {
-	            var matches = (this.document || this.ownerDocument).querySelectorAll(s),
-	                i = matches.length;
-	            while (--i >= 0 && matches.item(i) !== this) {}
-	            return i > -1;
-	        };
-	}
-
-
-/***/ },
-/* 8 */
+/* 5 */
 /***/ function(module, exports) {
 
 	/*
 	 * nanoQuery function (can replace jQuery in 90% cases)
 	 * Syntax:
-	 * _(selector) - select and return the first matching element
-	 * _(selector, callback) - perform a callback on all selected elements
-	 * _(selector, event, handler) - add event handler to all selected elements
+	 * _($el, selector) - select and return the first matching element
+	 * _($el, selector, callback) - perform a callback on all selected elements
+	 * _($el, selector, event, handler) - add event handler to all selected elements
 	 */
 
-	module.exports=function(d,s,c,x){var r=d.querySelectorAll(s);return r.length?(c?[].forEach.call(r,x?function(e){e.addEventListener(c,x,!!0)}:c):r[0]):null}
+	module.exports=function(d, s, c, x) {
+	    var r = d.querySelectorAll(s);
+
+	    return r.length ? (
+	        c
+	        ?
+	        [].forEach.call(
+	            r,
+	            x
+	            ?
+	            function(e){
+	                e.addEventListener(c, x, !!0)
+	            }
+	            :
+	            c
+	            )
+	        :
+	        r[0]
+	    )
+	    :
+	    null
+	}
 
 
 /***/ }

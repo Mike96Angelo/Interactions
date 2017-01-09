@@ -2,71 +2,72 @@
 <html>
     <head>
         <title>Interactions</title>
-        <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script> -->
-        <script type="text/javascript" src="custom-element.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
         <script type="text/javascript" src="interactions.js"></script>
     </head>
     <body>
-        <div id="interactions">Loading...</div>
-        <script>
-            var CONFIG = {
-                    template: '<a href="example.com">{{name}}</a>\
-                        <span class="dblclick">DBLCLICK</span>\
-                        <span>SPAN</span>',
+        <div id="interactions">
+            <a>A tag</a>:
+            <span>SPAN tag</span>
+            <p class="dblclick">P tag</p>
+        </div>
 
-                    interactions: {
-                        clickEvent: {
-                            event: 'click',
-                            action: function action(e, $el) {
-                                console.log('click', $el);
-                                return false;
-                            }
-                        },
-                        dblclickEvent: {
-                            event: 'dblclick',
-                            target: '.dblclick',
-                            action: function action(e, $el) {
-                                console.log('dblclicked!', $el);
-                                return false;
-                            }
-                        },
-                        mouseenter: {
-                            event: 'mouseenter',
-                            target: 'span',
-                            action: function action(e, $el) {
-                                console.log('mouseenter!', $el);
-                                e.target.style.background = 'red';
-                            }
-                        },
-                        mouseleave: {
-                            event: 'mouseleave',
-                            target: 'span',
-                            action: function action(e, $el) {
-                                console.log('mouseleave!', $el);
-                                e.target.style.background = '';
-                            }
-                        },
-                        copy: {
-                            event: 'copy',
-                            $element: window,
-                            action: function action() {
-                                alert('Copied to clipboard!');
-                            }
+        <script>
+            var INTERACTIONS = {
+                    clickEvent: {
+                        event: 'click',
+                        action: function action(e, $el) {
+                            console.log('click', $el);
+                            return false;
+                        }
+                    },
+                    dblclickEvent: {
+                        event: 'dblclick',
+                        target: '.dblclick',
+                        action: function action(e, $el) {
+                            console.log('dblclicked!', $el);
+                            return false;
+                        }
+                    },
+                    mouseenter: {
+                        event: 'mouseenter',
+                        target: 'span',
+                        action: function action(e, $el) {
+                            console.log('mouseenter!', $el);
+                            e.target.style.background = 'red';
+                        }
+                    },
+                    mouseleave: {
+                        $: jQuery.noConflict(),
+                        event: 'mouseleave',
+                        target: 'span',
+                        action: function action(e, $el) {
+                            console.log('mouseleave!', $el);
+                            e.target.style.background = '';
+                        }
+                    },
+                    copy: {
+                        event: 'copy',
+                        emitter: window,
+                        action: function action() {
+                            alert('Copied to clipboard!');
                         }
                     }
                 };
 
-            var House = CustomElement.createElement(CONFIG, function House(options) {
-                var _ = this;
-                CustomElement.call(_, options);
-                new Interactions(this, CONFIG.interactions, _.$element);
-            });
+            // SAMPLE INTERACTION – see lib/base-event-listener for more
+            // Interactions.registerInteraction('longclick', function(emitter, interaction) {
+            //     emitter.addEventListener('click', function longClick(event) {
+            //         if (interaction.action.call(_, event, emitter) === false) {
+            //             event.preventDefault(); // mimic jQuery's `return false`
+            //             event.stopPropagation();
+            //         };
+            //     });
+            // });
 
-            var house = new House({
-                $element: document.getElementById('interactions'),
-                data: {
-                    name: 'My House'
-                }
+            new Interactions({
+                emitter: document.getElementById('interactions'),
+                interactions: INTERACTIONS
             });
         </script>
     </body>
